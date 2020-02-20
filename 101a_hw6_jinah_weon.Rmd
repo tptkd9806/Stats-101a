@@ -1,0 +1,116 @@
+---
+title: "101a_hw6_Jinah_Weon"
+author: "Jinah Weon 505119077"
+date: '2020 2 10 '
+output:
+  pdf_document: default
+  html_document: default
+---
+# 1) Iowa City is the home of the university of Iowa. Do schools in Iowa City out perform the rest? Answer, and provide supporting statistics and graphics (a graphic is required.)
+```{r}
+options(repos=structure(c(CRAN="http://cran.r-project.org")))
+install.packages("dplyr")
+library(dplyr)
+#Supporting with graphic
+iowatest <- read.delim("iowatest.txt")
+new <- group_by(iowatest, City) %>% 
+  summarise(
+    test_score= mean(Test, na.rm = TRUE)
+  )
+install.packages("ggpubr")
+library("ggpubr")
+ggboxplot(iowatest, x = "City", y = "Test",
+          color = "City", ylab = "test_scores", xlab = "cities")
+```
+
+Yes, its mean is much higher than any other cities' scores mean.
+
+```{}
+# Using t test
+the null hypothesis will be Iowa City's mean test score (iu) is less than the rest. And the alternative will be Iowa City's mean score outperform others(ou). 
+H0 : iu < ou
+H1 : iu >= ou
+```
+
+```{r}
+iu <- iowatest %>% filter(City == "Iowa City") %>% mutate(group = 1)
+iu
+ou <- iowatest %>% filter(City != "Iowa City") %>% mutate(group = 2)
+ou
+compare <- rbind(iu,ou)
+compare
+```
+
+```{r}
+# Supporting with statistics
+t.test(Test~group, data = compare, alternative = "greater")
+```
+
+Since the t.test show us the p-value is less than 0.05, it means we have enough evidence to reject the null; thus the alternative is true which means that iowa city performs better than other cities.
+
+
+# 2) Test scores are meant to reflect the success of a school's academic program. But many critics point out that factors other than academic success can influence a score. In particular, a school's score might be merely a reflection of the wealth of the student body. Address this issue by fitting a regression line to predict school test score from poverty score. Is there evidence that poverty is associated with the test score? 
+
+```{r}
+# t test
+ml <- lm(Test~Poverty, iowatest)
+summary(ml)
+```
+
+We look at the t test and p value. Since we used t-test, null hypothesis would be: slope is 0 and the alternative would be: slope is not zero, which means they are in association. We check the P value which is two-sided and it is lower than 0.05. Therefore, we reject the null hypothesis and declare that they have association. 
+
+The formula will be this: 
+Test = 74.6058-0.5358*x
+We can see negative trend from the graph as we can see from the graph, as poverty rate increases, Test scores decreases. 
+
+```{r}
+# Regression line
+plot(Test~Poverty, iowatest)
+abline(ml)
+```
+
+They are in straight linear line with moderate to strong association. 
+
+
+# 3) Describe any weaknesses in your model.
+```{r}
+plot(lm(Test ~ Poverty, iowatest))
+```
+
+Residuals Plot: This plot has no trend which means it has linearity. However, the line is not horizontal and contains few outliers. 
+Normal Q-Q Plot: This plot has left and right tail making the line not straight (normal). 
+Scale-Location Plot: We use this plot to diagonose non-constant variance. A trend (increasing or decreasing) indicates failure in the constant variance condition and this graph have somewhat decreasing trend. 
+Leverage Plot: It has some high leverages.
+
+#4) What would you consider to be a well-performing school among schools with an 80% poverty rating?
+
+```{r}
+well <- iowatest %>% filter(Poverty == 80)
+well
+```
+
+Among this 3 Schools with same Poverty rate(80%), we would consider the test score to be well-performing school because since they have same poverty rate, there is nothing to compare other than the test score to perform well. Thus, in this case, School name "Polk" would be the well-performing School with the highest Test score (54).
+
+
+#5) Create a statistical graphic that illustrates how the relationship between poverty and test scores varies by city. 
+
+```{r}
+install.packages("lattice")
+library("lattice")
+xyplot(Poverty ~ Test|City, data =iowatest)
+```
+
+
+#6) What hypothesis test is the F-test in the summary output for Question 2 testing? State the hypotheses and the conclusion from the test.
+
+```{r}
+anova(ml)
+```
+
+F-test:
+H0: E(Y|x) = B0
+Ha: E(Y|x) = B0 + B1x
+
+The P value is extremely small and the F value is big which results in rejecting the null hypothesis. In short, adding the slope was the good choice; Also, Poverty and Test score has association. 
+** From the summary output for Question 2 testing, t value and the f value are in relationship: the t-statistic that tests the slope is the square root of the F statistic that tests the slope. 
+
